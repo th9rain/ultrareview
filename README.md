@@ -1,56 +1,43 @@
 # ultrareview
 
-> Recreate Claude Code–style multi-agent code review in your own environment.
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-`ultrareview` is a reusable skill that packages a high-signal review workflow: dispatch multiple specialized review agents in parallel, let them challenge each other’s findings, then merge the confirmed issues into a single structured report.
+> A reusable multi-agent code review workflow for high-signal findings, cross-validation, and structured reports.
 
-## Why this matters
+`ultrareview` packages a practical review pattern: dispatch specialized reviewers in parallel, let them challenge each other's claims, then merge the confirmed issues into a single report that is easier to trust and easier to act on.
 
-Most AI code review today is still basically:
+## Why this exists
+
+A lot of AI code review still looks like this:
 - one model
 - one pass
-- one mixed bag of comments
+- one undifferentiated list of comments
 
-That works, but it often produces:
-- shallow coverage
-- repeated findings
-- weak severity judgment
-- more false positives than you want
+That is often enough for light review, but it breaks down when you care about:
+- correctness on important changes
+- security-sensitive code paths
+- large diffs
+- edge cases
+- noisy false positives
 
-`ultrareview` applies a different pattern:
+`ultrareview` uses a different pattern:
 - **specialized reviewers** instead of one generic reviewer
 - **parallel review** instead of serial thinking
-- **cross-validation** instead of blindly trusting first impressions
+- **cross-validation** instead of trusting the first claim
 - **structured aggregation** instead of dumping raw notes
 
-The result is a review flow that is much better suited to:
-- pre-merge review for important changes
-- bug hunting
-- security-oriented review
-- large diffs
-- high-risk refactors
-- codebases where correctness matters more than style commentary
+The result is a review workflow that is better suited to pre-merge review, bug hunting, security-oriented review, and higher-risk refactors.
 
 ## What this repo is
 
-This repo does **not** contain Anthropic’s private hosted review backend.
+This repository is a reusable skill package for running a multi-agent review workflow in your own environment.
 
-It reconstructs the **workflow pattern** behind ultrareview so you can run a similar multi-agent review flow with:
+It is designed for setups where you want to use:
 - your own agent runtime
 - your own model provider
-- your own infra / local environment
+- your own local or self-hosted infrastructure
 
-So the accurate value proposition is:
-
-> A self-hosted ultrareview-style workflow, without needing the paid hosted Claude Code review product.
-
-What that means in practice:
-- you do **not** need Anthropic’s official hosted ultrareview service
-- you do **not** need to send code to a review system you do not control
-- you **do** still pay for your own model/API/infrastructure usage
-
-So this is not “magic free inference.”
-It is “bring your own runtime, reproduce the workflow, avoid the hosted product fee.”
+This repo does **not** include any hosted proprietary review backend, and it does **not** make model usage free. It gives you a workflow pattern, role prompts, and setup guidance that you can adapt to your own stack.
 
 ## Core workflow
 
@@ -58,7 +45,7 @@ It is “bring your own runtime, reproduce the workflow, avoid the hosted produc
 
 1. **Collect context**
    - files, folders, PR diff, or full repo
-   - project-specific rules from `CLAUDE.md` and `REVIEW.md`
+   - project-specific guidance from files such as `CLAUDE.md` and `REVIEW.md`
 
 2. **Spawn parallel specialists**
    Typical roles include:
@@ -69,14 +56,14 @@ It is “bring your own runtime, reproduce the workflow, avoid the hosted produc
    - Architecture Reviewer
 
 3. **Cross-validate findings**
-   - agents try to disprove each other’s claims
-   - unconfirmed issues are dropped
+   - agents try to disprove each other's claims
+   - weak or unconfirmed issues are dropped
    - overlapping findings are deduplicated
 
 4. **Produce a structured report**
-   - 🔴 Critical
-   - 🟡 Warning
-   - 🟣 Pre-existing
+   - Critical
+   - Warning
+   - Pre-existing
 
 ## Quick start
 
@@ -86,10 +73,10 @@ Copy this repo into your skill directory or reuse the files in your own skill sy
 
 ```text
 ultrareview/
-├── SKILL.md
-└── references/
-    ├── architecture.md
-    └── diy-setup.md
+|-- SKILL.md
+`-- references/
+    |-- architecture.md
+    `-- diy-setup.md
 ```
 
 Then invoke it for tasks like:
@@ -106,15 +93,15 @@ Review this PR diff with logic, security, performance, and edge-case agents
 Do a deep pre-merge audit for this refactor
 ```
 
-### Option 2: Adapt the prompts to your own coding agent
+### Option 2: Adapt the workflow to your own coding agent
 
 If your environment supports:
 - subagents
-- team/parallel agent execution
+- team or parallel agent execution
 - slash-command prompt files
 - CI headless CLI review
 
-then you can directly adapt the role prompts and orchestration guidance from:
+then you can directly adapt the orchestration guidance from:
 - `SKILL.md`
 - `references/diy-setup.md`
 
@@ -125,14 +112,14 @@ then you can directly adapt the role prompts and orchestration guidance from:
 **Scope**: `src/auth/`, `src/session.ts`
 **Agents**: 5 | **Duration**: 2m 41s | **Findings**: 4
 
-## 🔴 Critical (1)
+## Critical (1)
 ### [C1] Session token can be reused after logout
 - **Location**: `src/session.ts:88-121`
 - **Issue**: Logout clears client state but does not revoke the persisted server-side token.
 - **Root cause**: Token invalidation path is missing in the logout flow.
 - **Fix**: Revoke the token on logout and reject stale tokens during session validation.
 
-## 🟡 Warning (2)
+## Warning (2)
 ### [W1] User lookup can trigger N+1 queries during permission checks
 - **Location**: `src/auth/permissions.ts:41-79`
 - **Issue**: Role expansion performs repeated DB reads inside a loop.
@@ -143,7 +130,7 @@ then you can directly adapt the role prompts and orchestration guidance from:
 - **Issue**: Missing email falls through to guest behavior without explicit handling.
 - **Fix**: Fail closed or return an explicit typed error.
 
-## 🟣 Pre-existing (1)
+## Pre-existing (1)
 ### [P1] Legacy password hash path lacks migration guard
 - **Location**: `src/auth/hash.ts:12-33`
 - **Issue**: Old hash format is still accepted without progressive upgrade.
@@ -153,20 +140,20 @@ then you can directly adapt the role prompts and orchestration guidance from:
 
 ```text
 ultrareview/
-├── README.md
-├── README.zh-CN.md
-├── SKILL.md
-├── LICENSE
-└── references/
-    ├── architecture.md
-    └── diy-setup.md
+|-- README.md
+|-- README.zh-CN.md
+|-- SKILL.md
+|-- LICENSE
+`-- references/
+    |-- architecture.md
+    `-- diy-setup.md
 ```
 
 ## Files
 
-- `SKILL.md` — main skill definition, review process, report format, and implementation options
-- `references/architecture.md` — architecture notes on multi-agent review, agent roles, cross-validation, and benchmark framing
-- `references/diy-setup.md` — practical setup guide for Agent Teams, custom subagents, plugin-based review, and CI/CD usage
+- `SKILL.md` - main skill definition, review process, report format, and implementation paths
+- `references/architecture.md` - architecture notes on multi-agent review, agent roles, cross-validation, and evaluation framing
+- `references/diy-setup.md` - practical setup guide for Agent Teams, custom subagents, plugin-based review, and CI/CD usage
 
 ## Implementation paths
 
@@ -184,31 +171,23 @@ This repo documents four practical ways to apply the workflow:
 4. **CI/CD integration**  
    Useful for automated pull-request review pipelines.
 
-## What “free ultrareview” really means
+## Positioning
 
-People often summarize this as “use Claude Code ultrareview for free.”
+The value here is not "ask one strong model to review code."
 
-That wording is understandable, but sloppy.
+The value is the system design:
+- multiple reviewers
+- specialized roles
+- falsification
+- synthesis
 
-What this repo actually gives you is:
-- a **self-hosted reproduction of the ultrareview-style workflow**
-- **without paying for Anthropic’s hosted review product itself**
-- while still using **your own model/API budget**
+That pattern is portable across runtimes, providers, and local engineering workflows.
 
-So the accurate claim is:
-
-> You can get ultrareview-style multi-agent review capability without buying the official hosted product.
-
-Not:
-- “this contains Anthropic’s private backend”
-- “this makes model usage free”
-- “this literally unlocks the official hidden feature”
-
-## Recommended GitHub metadata
+## Suggested GitHub metadata
 
 **Repository description**
 
-> Recreate Claude Code–style multi-agent ultrareview with a self-hosted skill workflow.
+> Multi-agent code review workflow with specialized reviewers, cross-validation, and structured reporting.
 
 **Suggested topics**
 
@@ -216,22 +195,12 @@ Not:
 code-review
 multi-agent
 ai-code-review
-claude-code
 agent-workflow
-openclaw
 prompt-engineering
 security-review
 static-analysis
+developer-tools
 ```
-
-## Origin
-
-This skill was built from reverse-engineering and reconstructing the multi-agent review pattern exposed by Claude Code source artifacts, then adapting that pattern into a reusable OpenClaw-compatible skill package.
-
-The key insight is simple:
-
-> The real leverage is not just “ask one strong model to review code.”
-> The leverage is the **system design**: multiple reviewers, specialized roles, falsification, and synthesis.
 
 ## Related reading
 
